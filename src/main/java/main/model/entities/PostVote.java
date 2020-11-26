@@ -7,7 +7,7 @@ import java.util.Date;
 @Table(name = "post_votes")
 public class PostVote {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne(cascade = CascadeType.ALL, optional=false)
@@ -21,7 +21,7 @@ public class PostVote {
     @Column(nullable = false)
     private Date time;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TINYINT")
     private Short value;
 
 
