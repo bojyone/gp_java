@@ -8,15 +8,15 @@ import java.util.List;
 @Table(name = "posts")
 public class Post {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name = "is_active", nullable = false, columnDefinition = "TINYINT")
     private Short isActive;
 
     @Column(name = "moderation_status", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ModerationStatus moderationStatus;
+    //@Enumerated(EnumType.STRING)
+    private String moderationStatus;
 
     @ManyToOne(cascade = CascadeType.ALL, optional=false)
     @JoinColumn(name = "moderator_id", nullable = true)
@@ -69,11 +69,11 @@ public class Post {
         this.isActive = isActive;
     }
 
-    public ModerationStatus getModerationStatus() {
+    public String getModerationStatus() {
         return moderationStatus;
     }
 
-    public void setModerationStatus(ModerationStatus moderationStatus) {
+    public void setModerationStatus(String moderationStatus) {
         this.moderationStatus = moderationStatus;
     }
 

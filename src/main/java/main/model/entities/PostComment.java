@@ -8,7 +8,7 @@ import java.util.List;
 @Table(name = "post_comments")
 public class PostComment {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name="parent_id", nullable = true)
