@@ -18,9 +18,9 @@ public class Post {
     //@Enumerated(EnumType.STRING)
     private String moderationStatus;
 
-    @ManyToOne(cascade = CascadeType.ALL, optional=false)
-    @JoinColumn(name = "moderator_id", nullable = true)
-    private User moderator;
+    //@ManyToOne(cascade = CascadeType.ALL, optional=false)
+    @Column(name = "moderator_id", nullable = true)
+    private Integer moderatorId;
 
     @ManyToOne(cascade = CascadeType.ALL, optional=false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -77,12 +77,12 @@ public class Post {
         this.moderationStatus = moderationStatus;
     }
 
-    public User getModerator() {
-        return moderator;
+    public Integer getModerator() {
+        return moderatorId;
     }
 
-    public void setModerator(User moderator) {
-        this.moderator = moderator;
+    public void setModerator(Integer moderatorId) {
+        this.moderatorId = moderatorId;
     }
 
     public User getUser() {

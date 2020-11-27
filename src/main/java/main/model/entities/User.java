@@ -38,9 +38,9 @@ public class User
     private List<Post> userPosts;
 
 
-    @OneToMany
-    @JoinColumn(name = "moderator_id")
-    private List<Post> moderatorPosts;
+//    @OneToMany
+//    @JoinColumn(name = "moderator_id")
+//    private List<Post> moderatorPosts;
 
     @OneToMany
     @JoinColumn(name = "user_id")
@@ -122,14 +122,14 @@ public class User
     public void setUserPosts(List<Post> userPosts) {
         this.userPosts = userPosts;
     }
-
-    public List<Post> getModeratorPosts() {
-        return moderatorPosts;
-    }
-
-    public void setModeratorPosts(List<Post> moderatorPosts) {
-        this.moderatorPosts = moderatorPosts;
-    }
+//
+//    public List<Post> getModeratorPosts() {
+//        return moderatorPosts;
+//    }
+//
+//    public void setModeratorPosts(List<Post> moderatorPosts) {
+//        this.moderatorPosts = moderatorPosts;
+//    }
 
     public List<PostVote> getUserVotes() {
         return userVotes;
