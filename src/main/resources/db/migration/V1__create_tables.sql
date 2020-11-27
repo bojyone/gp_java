@@ -20,8 +20,7 @@ CREATE TABLE `posts` (
         `moderator_id` int(11) NOT NULL,
         `user_id` int(11) NOT NULL,
         PRIMARY KEY (`id`),
-        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-        FOREIGN KEY (`moderator_id`) REFERENCES `users` (`id`)
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
                      );
 CREATE TABLE `captcha_codes` (
         `id` int(11) NOT NULL AUTO_INCREMENT,

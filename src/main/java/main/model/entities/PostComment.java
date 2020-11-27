@@ -12,7 +12,7 @@ public class PostComment {
     private Integer id;
 
     @Column(name="parent_id", nullable = true)
-    private int parentId;
+    private Integer parentId;
 
     @OneToMany(cascade=CascadeType.PERSIST)
     @JoinColumn(name="parent_id")
