@@ -4,7 +4,7 @@ import java.util.Date;
 
 public class PostDTO {
     private Integer id;
-    private Date timestamp;
+    private Long timestamp;
     private UserDTO user;
     private String title;
     private Integer commentCount;
@@ -20,11 +20,11 @@ public class PostDTO {
         this.id = postId;
     }
 
-    public Date getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Date timestamp) {
+    public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
 
