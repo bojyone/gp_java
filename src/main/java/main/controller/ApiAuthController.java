@@ -3,7 +3,6 @@ package main.controller;
 import main.model.DTO.NewUserDTO;
 import main.model.entities.User;
 import main.services.AuthService;
-import main.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,13 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 public class ApiAuthController {
 
-    private Map<String, Integer> authUsers;
-    BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private Map<String, Integer> authUsers = new HashMap<>();
+    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
 
@@ -32,7 +32,6 @@ public class ApiAuthController {
 
         return new ResponseEntity(authService.captchaGenerate(), HttpStatus.OK);
     }
-
 
     @PostMapping("/api/auth/register")
     public ResponseEntity registration(@RequestBody NewUserDTO userData)

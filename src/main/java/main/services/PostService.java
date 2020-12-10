@@ -86,6 +86,7 @@ public class PostService {
         List<PostVote> votes = post.getPostVotes();
         int likeCount = 0;
         int dislikeCount = 0;
+        int viewCount = 0;
 
         for (PostVote vote : votes)
             if (vote.getValue() == 1)
@@ -104,6 +105,7 @@ public class PostService {
             list.add(commentDTO);
 
         }
+
         postDetailDTO.setActive(post.getIsActive());
         postDetailDTO.setUser(postAuthor);
         postDetailDTO.setId(post.getId());

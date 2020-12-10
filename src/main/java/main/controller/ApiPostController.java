@@ -1,21 +1,13 @@
 package main.controller;
 
 import main.model.DTO.AllPostsDTO;
-import main.model.DTO.PostDTO;
 import main.model.DTO.PostDetailDTO;
-import main.model.entities.*;
-import main.model.repositories.PostRepository;
 import main.services.PostService;
-import main.services.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.bind.DefaultValue;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
 
 @RestController
 public class ApiPostController {
@@ -77,15 +69,5 @@ public class ApiPostController {
     {
         AllPostsDTO posts = postService.getSearchResultByTag(offset, limit, tag);
         return new ResponseEntity(posts, HttpStatus.OK);
-    }
-
-
-    @Autowired
-    private TagService tagService;
-
-    @GetMapping("/test/")
-    public ResponseEntity test() {
-        tagService.test();
-        return new ResponseEntity(HttpStatus.OK);
     }
 }

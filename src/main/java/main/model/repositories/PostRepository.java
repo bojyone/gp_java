@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
+
 @Repository
 public interface PostRepository extends PagingAndSortingRepository<Post, Integer> {
 
@@ -71,4 +72,22 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
             nativeQuery = true)
     List<Post> findSearchResultByTag(@Param("paging") Pageable paging,
                                      @Param("tag") String tag);
+
+
+    @Query(value = "SELECT DISTINCT x.p_date FROM (SELECT DATE(p.time) AS p_date " +
+           "FROM posts AS p WHERE YEAR(p.time) = :year) AS x",
+           nativeQuery = true)
+    List<String> findDatePostOfYear(@Param("year") Integer year);
+
+
+    @Query(value = "SELECT COUNT(x.p_id) FROM (SELECT DATE(p.time) AS p_date, " +
+           "p.id AS p_id FROM posts AS p WHERE YEAR(p.time) = :year) AS x GROUP BY x.p_date",
+           nativeQuery = true)
+    List<Integer> findPostCountOfYear(@Param("year") Integer year);
+
+
+    @Query(value = "SELECT DISTINCT YEAR(p.time) FROM posts AS p",
+           nativeQuery = true)
+    List<Integer> findYears();
+
 }
