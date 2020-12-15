@@ -1,30 +1,22 @@
 package main.controller;
 
-import main.model.DTO.NewUserDTO;
-import main.model.entities.User;
+import main.model.DTO.*;
 import main.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 public class ApiAuthController {
 
-    private Map<String, Integer> authUsers = new HashMap<>();
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private static final SecureRandom secureRandom = new SecureRandom();
-    private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
+    private final AuthService authService;
 
     @Autowired
-    private AuthService authService;
+    public ApiAuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
 
     @GetMapping("/api/auth/captcha")
@@ -33,55 +25,58 @@ public class ApiAuthController {
         return new ResponseEntity(authService.captchaGenerate(), HttpStatus.OK);
     }
 
+
     @PostMapping("/api/auth/register")
     public ResponseEntity registration(@RequestBody NewUserDTO userData)
     {
-        String requestCaptcha = userData.getCaptcha();
-        String requestSecretCaptcha = userData.getCaptchaSecret();
+        PostResponseErrors rr = authService.newUserRegistration(userData);
 
-        if (!authService.checkUser(userData.getEmail()))
-            return new ResponseEntity("{\"result\": false, \"errors\": {" +
-                    "\"email\": \"Этот e-mail уже зарегистрирован\"}}", HttpStatus.BAD_REQUEST);
-
-        else if (userData.getPassword().length() < 6)
-            return new ResponseEntity("{\"result\": false, \"errors\": {" +
-                    "\"password\": \"Пароль короче 6-ти символов\"}}", HttpStatus.BAD_REQUEST);
-
-        else if (!authService.checkCaptcha(requestCaptcha, requestSecretCaptcha))
-            return new ResponseEntity("{\"result\": false, \"errors\": {" +
-                    "\"captcha\": \"Код с картинки введён неверно\"}}", HttpStatus.BAD_REQUEST);
-
-        else if (!userData.getName().matches("[a-zA-Zа-яА-Я ]*"))
-            return new ResponseEntity("{\"result\": false, \"errors\": {" +
-                    "\"name\": \"Имя указано неверно\"}}", HttpStatus.BAD_REQUEST);
+        if (rr.getResult()) {
+            return new ResponseEntity(rr, HttpStatus.CREATED);
+        }
 
         else {
-
-
-            User newUser = new User();
-
-            newUser.setName(userData.getName());
-            newUser.setEmail(userData.getEmail());
-            newUser.setPassword(passwordEncoder.encode(userData.getPassword()));
-            newUser.setIsModerator((short) 0);
-            newUser.setRegTime(new Date());
-            authService.getUserRepository().save(newUser);
-
-            return new ResponseEntity("{\"result\": true}", HttpStatus.CREATED);
+            return new ResponseEntity(rr, HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping("/api/auth/login")
     public ResponseEntity authorization(@RequestParam(name = "e_mail") String email,
                                         @RequestParam String password) {
-        User user = authService.getUserFromEmail(email);
-        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
 
-            byte[] randomBytes = new byte[24];
-            secureRandom.nextBytes(randomBytes);
-            authUsers.put(base64Encoder.encodeToString(randomBytes), user.getId());
-            return new ResponseEntity("{\"result\": true}", HttpStatus.OK);
+        PostResponseUser authResponse = authService.userAuthorization(email, password);
+        if (authResponse.isResult()) {
+            return new ResponseEntity(authResponse, HttpStatus.OK);
         }
-        return new ResponseEntity("{\"result\": false}", HttpStatus.OK);
+        return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/api/auth/check")
+    public ResponseEntity authorizationCheck(@RequestParam String token) {
+        
+        PostResponseUser response = authService.userAuthorizationCheck(token);
+        if (response.isResult()) {
+            return new ResponseEntity(response, HttpStatus.OK);
+        }
+        return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+    }
+
+
+    @PostMapping("/api/auth/restore")
+    public ResponseEntity passwordRestore(String email) {
+
+        return new ResponseEntity(authService.userPasswordRestore(email), HttpStatus.OK);
+    }
+
+
+    @PostMapping("/api/auth/password")
+    public ResponseEntity putNewPassword(@RequestBody UserNewPassword data) {
+        PostResponseErrors response = authService.passwordChange(data);
+        if (response.getResult()) {
+            return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+        }
+
+        return new ResponseEntity(response, HttpStatus.OK);
     }
 }

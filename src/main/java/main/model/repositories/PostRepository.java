@@ -1,5 +1,8 @@
 package main.model.repositories;
 
+import main.model.DTO.PostCountDTO;
+import main.model.DTO.PostCountInterface;
+import main.model.DTO.TagDTO;
 import main.model.entities.Post;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -53,7 +56,7 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
 
     @Query(value = "SELECT p.* FROM posts p JOIN users u ON p.user_id = u.id WHERE is_active = 1 " +
            "AND moderation_status = 'ACCEPTED' AND time <= (SELECT NOW()) AND (:query LIKE (%u.name%)" +
-           " OR :query LIKE (%p.title%) OR :query = u.id)",
+           " OR p.title LIKE (%:query%) OR :query = u.id)",
            nativeQuery = true)
     List<Post> findSearchResult(@Param("paging") Pageable paging,
                                 @Param("query") String query);
@@ -74,20 +77,24 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
                                      @Param("tag") String tag);
 
 
-    @Query(value = "SELECT DISTINCT x.p_date FROM (SELECT DATE(p.time) AS p_date " +
-           "FROM posts AS p WHERE YEAR(p.time) = :year) AS x",
-           nativeQuery = true)
-    List<String> findDatePostOfYear(@Param("year") Integer year);
+//    @Query(value = "SELECT DISTINCT x.p_date FROM (SELECT DATE(p.time) AS p_date " +
+//           "FROM posts AS p WHERE YEAR(p.time) = :year) AS x",
+//           nativeQuery = true)
+//    List<String> findDatePostOfYear(@Param("year") Integer year);
 
 
-    @Query(value = "SELECT COUNT(x.p_id) FROM (SELECT DATE(p.time) AS p_date, " +
+    @Query(value = "SELECT x.p_date as date, COUNT(x.p_id) as count FROM (SELECT DATE(p.time) AS p_date, " +
            "p.id AS p_id FROM posts AS p WHERE YEAR(p.time) = :year) AS x GROUP BY x.p_date",
            nativeQuery = true)
-    List<Integer> findPostCountOfYear(@Param("year") Integer year);
+    List<PostCountInterface> findPostCountOfYear(@Param("year") Integer year);
 
 
     @Query(value = "SELECT DISTINCT YEAR(p.time) FROM posts AS p",
            nativeQuery = true)
     List<Integer> findYears();
+
+    @Query(value = "SELECT COUNT(p.*) FROM posts p WHERE p.moderation_status = 'NEW'",
+           nativeQuery = true)
+    Integer findCountNewPosts();
 
 }

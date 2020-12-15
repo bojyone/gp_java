@@ -86,7 +86,6 @@ public class PostService {
         List<PostVote> votes = post.getPostVotes();
         int likeCount = 0;
         int dislikeCount = 0;
-        int viewCount = 0;
 
         for (PostVote vote : votes)
             if (vote.getValue() == 1)

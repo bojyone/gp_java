@@ -1,6 +1,8 @@
 package main.controller;
 
 import main.api.response.InitResponse;
+import main.model.repositories.GlobalSettingRepository;
+import main.model.repositories.UserRepository;
 import main.services.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,14 +17,13 @@ import java.util.Calendar;
 @RestController
 public class ApiGeneralController {
     private final InitResponse initResponse;
+    private final GeneralService generalService;
 
 
-    @Autowired(required=true)
-    private GeneralService generalService;
-
-
-    public ApiGeneralController(InitResponse initResponse) {
+    @Autowired
+    public ApiGeneralController(InitResponse initResponse, GeneralService generalService) {
         this.initResponse = initResponse;
+        this.generalService = generalService;
     }
 
 
@@ -40,5 +41,15 @@ public class ApiGeneralController {
             year = Calendar.getInstance().get(Calendar.YEAR);
 
         return new ResponseEntity(generalService.getPostCalendar(year), HttpStatus.OK);
+    }
+
+    @GetMapping("/api/tag/")
+    public ResponseEntity getTag(@RequestParam(required = false) String tag) {
+        return new ResponseEntity(generalService.getTagWeight(), HttpStatus.OK);
+    }
+
+    @GetMapping("/api/settings/")
+    public ResponseEntity getGlobalSettings() {
+        return new ResponseEntity(generalService.getSettings(), HttpStatus.OK);
     }
 }
