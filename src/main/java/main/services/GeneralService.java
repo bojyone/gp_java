@@ -1,9 +1,6 @@
 package main.services;
 
-import main.model.DTO.CalendarDTO;
-import main.model.DTO.PostCountInterface;
-import main.model.DTO.SettingDTO;
-import main.model.DTO.TagWeightInterface;
+import main.model.DTO.*;
 import main.model.entities.GlobalSetting;
 import main.model.repositories.GlobalSettingRepository;
 import main.model.repositories.PostRepository;
@@ -80,5 +77,10 @@ public class GeneralService {
         }
 
         return globalSets;
+    }
+
+    public StatisticInterface getAllStatistics() {
+
+        return postRepository.findAllStatistics();
     }
 }

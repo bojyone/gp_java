@@ -4,6 +4,7 @@ import com.github.cage.Cage;
 import com.github.cage.GCage;
 import main.model.DTO.*;
 import main.model.entities.CaptchaCode;
+import main.model.entities.Post;
 import main.model.entities.User;
 import main.model.repositories.CaptchaCodeRepository;
 import main.model.repositories.PostRepository;
@@ -45,12 +46,6 @@ public class AuthService {
         this.postRepository = postRepository;
     }
 
-    public boolean checkUser(String email)
-    {
-        if (userRepository.findUserFromEmail(email) == null)
-            return true;
-        return false;
-    }
 
     public CaptchaDTO captchaGenerate() {
         Cage cage = new GCage();
@@ -80,9 +75,11 @@ public class AuthService {
         return captcha;
     }
 
-    public boolean checkCaptcha(String requestCaptcha, String requestSecretCaptcha) {
+
+    public boolean captchaCheck(String requestCaptcha, String requestSecretCaptcha) {
         return ccRepository.findCaptchaCode(requestCaptcha, requestSecretCaptcha) != null;
     }
+
 
     public PostResponseErrors newUserRegistration(NewUserDTO userData) {
         PostResponseErrors registrationResponse = new PostResponseErrors();
@@ -90,7 +87,7 @@ public class AuthService {
         String requestCaptcha = userData.getCaptcha();
         String requestSecretCaptcha = userData.getCaptchaSecret();
 
-        if (!checkUser(userData.getEmail())) {
+        if (userRepository.findUserFromEmail(userData.getEmail()) == null) {
             registrationResponse.setResult(false);
             registrationResponse.setErrors(emailError);
             return registrationResponse;
@@ -102,7 +99,7 @@ public class AuthService {
             return registrationResponse;
         }
 
-        else if (!checkCaptcha(requestCaptcha, requestSecretCaptcha)) {
+        else if (!captchaCheck(requestCaptcha, requestSecretCaptcha)) {
             registrationResponse.setResult(false);
             registrationResponse.setErrors(captchaError);
             return registrationResponse;
@@ -126,6 +123,7 @@ public class AuthService {
         return registrationResponse;
     }
 
+
     public PostResponseUser userAuthorization(String email, String password) {
         PostResponseUser authResponse = new PostResponseUser();
         authResponse.setResult(false);
@@ -148,22 +146,48 @@ public class AuthService {
                 userDetail.setModerationCount(0);
             }
 
-            byte[] randomBytes = new byte[24];
-            secureRandom.nextBytes(randomBytes);
-            String token = base64Encoder.encodeToString(randomBytes);
-            authUsers.put(token, user.getId());
-            userDetail.setToken(token);
             authResponse.setResult(true);
             authResponse.setUser(userDetail);
         }
         return authResponse;
     }
 
+
+    public String getGeneratedToken(Integer size) {
+
+        byte[] randomBytes = new byte[size];
+        secureRandom.nextBytes(randomBytes);
+        String token = base64Encoder.encodeToString(randomBytes);
+        return token;
+    }
+
+
+    public void saveToken(String token, Integer userId) {
+
+        authUsers.put(token, userId);
+    }
+
+
+    public void removeToken(String token) {
+        try {
+            authUsers.remove(token);
+        }
+        catch (Exception ex) {
+            ;
+        }
+    }
+
+
+    public boolean tokenCheck(String token) {
+        return authUsers.containsKey(token);
+    }
+
+
     public PostResponseUser userAuthorizationCheck(String token) {
         PostResponseUser response = new PostResponseUser();
         response.setResult(false);
 
-        if (authUsers.containsKey(token)) {
+        if (tokenCheck(token)) {
 
             User user = userRepository.findUserFromId(authUsers.get(token));
 
@@ -188,6 +212,7 @@ public class AuthService {
 
     }
 
+
     public SimpleResponse userPasswordRestore(String email) {
 
         User user = userRepository.findUserFromEmail(email);
@@ -201,7 +226,8 @@ public class AuthService {
         return new SimpleResponse(false);
     }
 
-    public PostResponseErrors passwordChange(UserNewPassword data) {
+
+    public PostResponseErrors passwordCheckAndChange(UserNewPassword data) {
 
         User user = userRepository.findUserFromCode(data.getCode());
         PostResponseErrors response = new PostResponseErrors();
@@ -217,7 +243,7 @@ public class AuthService {
             response.setErrors(passwordError);
             return response;
         }
-        else if (!checkCaptcha(data.getCaptcha(), data.getCaptchaSecret())) {
+        else if (!captchaCheck(data.getCaptcha(), data.getCaptchaSecret())) {
             response.setResult(false);
             response.setErrors(captchaError);
             return response;
@@ -227,4 +253,5 @@ public class AuthService {
 
         return response;
     }
+
 }

@@ -10,7 +10,7 @@
 
     <properties>
         <flyway.user>admin</flyway.user>
-        <flyway.password>Nolisu111</flyway.password>
+        <flyway.password>nolisu111</flyway.password>
         <flyway.schemas>mydb</flyway.schemas>
         <flyway.url>jdbc:mysql://localhost:3306/mydb?useSSL=false&amp;serverTimezone=UTC</flyway.url>
     </properties>
@@ -20,6 +20,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <source>14</source>
                     <target>14</target>

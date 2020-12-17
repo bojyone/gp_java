@@ -8,7 +8,6 @@ public class UserDetailDTO {
     private boolean moderation;
     private int moderationCount;
     private boolean settings;
-    private String token;
 
     public Integer getId() {
         return id;
@@ -66,11 +65,4 @@ public class UserDetailDTO {
         this.settings = settings;
     }
 
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
 }

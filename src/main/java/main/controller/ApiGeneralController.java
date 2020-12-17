@@ -34,7 +34,7 @@ public class ApiGeneralController {
 
 
     @GetMapping("/api/calendar/")
-    public ResponseEntity getCalendar(@RequestParam(required = false) Integer year) {
+    public ResponseEntity calendar(@RequestParam(required = false) Integer year) {
 
 
         if (year == null)
@@ -43,13 +43,22 @@ public class ApiGeneralController {
         return new ResponseEntity(generalService.getPostCalendar(year), HttpStatus.OK);
     }
 
+
     @GetMapping("/api/tag/")
-    public ResponseEntity getTag(@RequestParam(required = false) String tag) {
+    public ResponseEntity tag(@RequestParam(required = false) String tag) {
         return new ResponseEntity(generalService.getTagWeight(), HttpStatus.OK);
     }
 
+
     @GetMapping("/api/settings/")
-    public ResponseEntity getGlobalSettings() {
+    public ResponseEntity globalSettings() {
         return new ResponseEntity(generalService.getSettings(), HttpStatus.OK);
     }
+
+
+    @GetMapping("/api/statistics/all")
+    public ResponseEntity allStatistics() {
+        return new ResponseEntity(generalService.getAllStatistics(), HttpStatus.OK);
+    }
+
 }

@@ -3,6 +3,7 @@ package main.controller;
 import main.model.DTO.*;
 import main.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class ApiAuthController {
 
 
     @GetMapping("/api/auth/captcha")
-    public ResponseEntity getCaptcha() {
+    public ResponseEntity captcha() {
 
         return new ResponseEntity(authService.captchaGenerate(), HttpStatus.OK);
     }
@@ -45,10 +46,24 @@ public class ApiAuthController {
                                         @RequestParam String password) {
 
         PostResponseUser authResponse = authService.userAuthorization(email, password);
+
+        HttpHeaders headers = new HttpHeaders();
+        String token = authService.getGeneratedToken(24);
+        headers.add("token", token);
+
+        authService.saveToken(token, authResponse.getUser().getId());
+
         if (authResponse.isResult()) {
-            return new ResponseEntity(authResponse, HttpStatus.OK);
+            return new ResponseEntity(authResponse, headers, HttpStatus.OK);
         }
         return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+    }
+
+    @GetMapping("/api/auth/logout")
+    public ResponseEntity logout(@RequestHeader("token") String token) {
+
+        authService.removeToken(token);
+        return  new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
     }
 
 
@@ -71,8 +86,9 @@ public class ApiAuthController {
 
 
     @PostMapping("/api/auth/password")
-    public ResponseEntity putNewPassword(@RequestBody UserNewPassword data) {
-        PostResponseErrors response = authService.passwordChange(data);
+    public ResponseEntity passwordChange(@RequestBody UserNewPassword data) {
+        PostResponseErrors response = authService.passwordCheckAndChange(data);
+
         if (response.getResult()) {
             return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
         }

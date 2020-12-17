@@ -1,8 +1,6 @@
 package main.model.repositories;
 
-import main.model.DTO.PostCountDTO;
-import main.model.DTO.PostCountInterface;
-import main.model.DTO.TagDTO;
+import main.model.DTO.*;
 import main.model.entities.Post;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -93,8 +91,42 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
            nativeQuery = true)
     List<Integer> findYears();
 
+
     @Query(value = "SELECT COUNT(p.*) FROM posts p WHERE p.moderation_status = 'NEW'",
            nativeQuery = true)
     Integer findCountNewPosts();
+
+
+    @Query(value = "SELECT COUNT(*) postsCount, (SELECT COUNT(*) FROM posts p1 JOIN post_votes " +
+            "pv1 ON p1.id = pv1.post_id WHERE value = 1) likesCount,  (SELECT COUNT(*) FROM posts p1 " +
+            "JOIN post_votes pv1 ON p1.id = pv1.post_id WHERE value = 0) dislikesCount, SUM(view_count) viewsCount, " +
+            "UNIX_TIMESTAMP(MIN(time)) firstPublication FROM posts",
+           nativeQuery = true)
+    StatisticInterface findAllStatistics();
+
+
+    @Query(value = "SELECT p.* FROM posts p WHERE user_id = :id AND p.is_active = 0",
+           nativeQuery = true)
+    List<Post> findUserInactivePosts(@Param("id") Integer userId,
+                                        @Param("paging") Pageable paging);
+
+
+    @Query(value = "SELECT p.* FROM posts p WHERE user_id = :id AND p.is_active = 1 AND moderation_status = 'NEW'",
+           nativeQuery = true)
+    List<Post> findUserPendingPosts(@Param("id") Integer userId,
+                                       @Param("paging") Pageable paging);
+
+
+    @Query(value = "SELECT p.* FROM posts p WHERE user_id = :id AND p.is_active = 1 AND moderation_status = 'DECLINED'",
+           nativeQuery = true)
+    List<Post> findUserDeclinedPosts(@Param("id") Integer userId,
+                                        @Param("paging") Pageable paging);
+
+
+    @Query(value = "SELECT p.* FROM posts p WHERE user_id = :id AND p.is_active = 1 AND moderation_status = 'ACCEPTED'",
+           nativeQuery = true)
+    List<Post> findUserPublishedPosts(@Param("id") Integer userId,
+                                         @Param("paging") Pageable paging);
+
 
 }

@@ -18,11 +18,14 @@ import java.util.stream.Collectors;
 @Service
 public class PostService {
     private final PostRepository postRepository;
+    private final AuthService authService;
+
 
     @Autowired
-    public PostService(PostRepository postRepository) {
+    public PostService(PostRepository postRepository, AuthService authService) {
 
         this.postRepository = postRepository;
+        this.authService = authService;
     }
 
     @Autowired
@@ -43,6 +46,24 @@ public class PostService {
         allPosts.setCount(postRepository.findAllActivePostsCount());
         allPosts.setPost(posts);
         return allPosts;
+    }
+
+
+    public AllPostsDTO getUserAllPosts(String status, Integer limit, Integer offset, Integer userId) {
+
+        Pageable paging = PageRequest.of(offset / limit, limit);
+
+        List<PostDTO> posts = (switch (status) {
+            case "inactive" -> postRepository.findUserInactivePosts(userId, paging);
+            case "pending" -> postRepository.findUserPendingPosts(userId, paging);
+            case "declined" -> postRepository.findUserDeclinedPosts(userId, paging);
+            default -> postRepository.findUserPublishedPosts(userId, paging);
+        }).stream().map(this::convertToPostDTO).collect(Collectors.toList());
+
+        AllPostsDTO allUserPosts = new AllPostsDTO();
+        allUserPosts.setCount(postRepository.findAllActivePostsCount());
+        allUserPosts.setPost(posts);
+        return allUserPosts;
     }
 
 
@@ -74,6 +95,7 @@ public class PostService {
 
         return postDTO;
     }
+
 
     public PostDetailDTO getPostDetail(int id) {
         Post post = postRepository.findDetailPost(id);
@@ -158,5 +180,17 @@ public class PostService {
         allPosts.setCount(posts.size());
         allPosts.setPost(posts);
         return allPosts;
+    }
+
+
+    public void postViewCountIncrement(String token, PostDetailDTO postDTO) {
+
+        if (!authService.tokenCheck(token) ||
+            !authService.userAuthorizationCheck(token).getUser().getId().equals(postDTO.getUser().getId()) ||
+            !authService.userAuthorizationCheck(token).getUser().isModeration()) {
+
+            Post post = postRepository.findDetailPost(postDTO.getId());
+            post.setViewCount(post.getViewCount() + 1);
+        }
     }
 }
