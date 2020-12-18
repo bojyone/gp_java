@@ -83,4 +83,5 @@ public class GeneralService {
 
         return postRepository.findAllStatistics();
     }
+    
 }

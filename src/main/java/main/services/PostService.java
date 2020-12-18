@@ -183,11 +183,9 @@ public class PostService {
     }
 
 
-    public void postViewCountIncrement(String token, PostDetailDTO postDTO) {
+    public void postViewCountIncrement(User user, PostDetailDTO postDTO) {
 
-        if (!authService.tokenCheck(token) ||
-            !authService.userAuthorizationCheck(token).getUser().getId().equals(postDTO.getUser().getId()) ||
-            !authService.userAuthorizationCheck(token).getUser().isModeration()) {
+        if (user == null || user.getId() != postDTO.getUser().getId() || user.getIsModerator() == 0) {
 
             Post post = postRepository.findDetailPost(postDTO.getId());
             post.setViewCount(post.getViewCount() + 1);

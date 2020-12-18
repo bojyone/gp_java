@@ -178,6 +178,12 @@ public class AuthService {
     }
 
 
+    public User getUserFromToken(String token) {
+
+        return userRepository.findUserFromId(authUsers.get(token));
+    }
+
+
     public boolean tokenCheck(String token) {
         return authUsers.containsKey(token);
     }
@@ -218,9 +224,7 @@ public class AuthService {
         User user = userRepository.findUserFromEmail(email);
         if (user != null) {
 
-            byte[] randomBytes = new byte[45];
-            secureRandom.nextBytes(randomBytes);
-            user.setCode(base64Encoder.encodeToString(randomBytes));
+            user.setCode(getGeneratedToken(45));
             return new SimpleResponse(true);
         }
         return new SimpleResponse(false);

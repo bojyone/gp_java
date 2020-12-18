@@ -3,6 +3,7 @@ package main.controller;
 import main.model.DTO.AllPostsDTO;
 import main.model.DTO.PostDetailDTO;
 import main.model.DTO.PostResponseUser;
+import main.model.entities.User;
 import main.services.AuthService;
 import main.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,11 +43,12 @@ public class ApiPostController {
                                      @PathVariable int id)
     {
         PostDetailDTO post = postService.getPostDetail(id);
+        User user = authService.getUserFromToken(token);
         if(post == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
-        postService.postViewCountIncrement(null, post);
+        postService.postViewCountIncrement(user, post);
 
 
         return new ResponseEntity(post, HttpStatus.OK);
