@@ -13,18 +13,18 @@ public class CaptchaCode {
     @Column(nullable = false)
     private Date time;
 
-    @Column(nullable = false, columnDefinition = "TINYTEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String code;
 
     @Column(name = "secret_code", nullable = false, columnDefinition = "TINYTEXT")
     private String secretCode;
 
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

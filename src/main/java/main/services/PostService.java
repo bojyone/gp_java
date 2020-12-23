@@ -3,6 +3,9 @@ package main.services;
 import main.model.DTO.*;
 import main.model.entities.*;
 import main.model.repositories.PostRepository;
+import main.model.repositories.PostVoteRepository;
+import main.model.repositories.Tag2PostRepository;
+import main.model.repositories.TagRepository;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,25 +14,32 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class PostService {
     private final PostRepository postRepository;
-    private final AuthService authService;
+    private final TagRepository tagRepository;
+    private final Tag2PostRepository tagToPostRepository;
+    private final PostVoteRepository postVoteRepository;
+    private final ModelMapper modelMapper;
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
     @Autowired
-    public PostService(PostRepository postRepository, AuthService authService) {
+    public PostService(PostRepository postRepository, PostVoteRepository postVoteRepository,
+                       ModelMapper modelMapper, TagRepository tagRepository,
+                       Tag2PostRepository tagToPostRepository) {
 
         this.postRepository = postRepository;
-        this.authService = authService;
-    }
+        this.tagRepository = tagRepository;
+        this.tagToPostRepository = tagToPostRepository;
+        this.postVoteRepository = postVoteRepository;
+        this.modelMapper = modelMapper;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    }
 
     public AllPostsDTO getAllPosts(String mode, Integer limit, Integer offset) {
 
@@ -44,7 +54,7 @@ public class PostService {
 
         AllPostsDTO allPosts = new AllPostsDTO();
         allPosts.setCount(postRepository.findAllActivePostsCount());
-        allPosts.setPost(posts);
+        allPosts.setPosts(posts);
         return allPosts;
     }
 
@@ -53,6 +63,7 @@ public class PostService {
 
         Pageable paging = PageRequest.of(offset / limit, limit);
 
+
         List<PostDTO> posts = (switch (status) {
             case "inactive" -> postRepository.findUserInactivePosts(userId, paging);
             case "pending" -> postRepository.findUserPendingPosts(userId, paging);
@@ -60,10 +71,26 @@ public class PostService {
             default -> postRepository.findUserPublishedPosts(userId, paging);
         }).stream().map(this::convertToPostDTO).collect(Collectors.toList());
 
+
         AllPostsDTO allUserPosts = new AllPostsDTO();
-        allUserPosts.setCount(postRepository.findAllActivePostsCount());
-        allUserPosts.setPost(posts);
+        allUserPosts.setCount(posts.size());
+        allUserPosts.setPosts(posts);
         return allUserPosts;
+    }
+
+
+    public AllPostsDTO getModeratorAllPosts(User moderator, Integer limit, Integer offset) {
+
+        Pageable paging = PageRequest.of(offset / limit, limit);
+
+        List<PostDTO> posts = postRepository.findModeratorPosts(paging, moderator.getId())
+                                            .stream().map(this::convertToPostDTO).collect(Collectors.toList());
+
+        AllPostsDTO allModeratorPosts = new AllPostsDTO();
+        allModeratorPosts.setCount(posts.size());
+        allModeratorPosts.setPosts(posts);
+
+        return allModeratorPosts;
     }
 
 
@@ -150,7 +177,7 @@ public class PostService {
 
         AllPostsDTO allPosts = new AllPostsDTO();
         allPosts.setCount(posts.size());
-        allPosts.setPost(posts);
+        allPosts.setPosts(posts);
         return allPosts;
     }
 
@@ -164,7 +191,7 @@ public class PostService {
 
         AllPostsDTO allPosts = new AllPostsDTO();
         allPosts.setCount(posts.size());
-        allPosts.setPost(posts);
+        allPosts.setPosts(posts);
         return allPosts;
     }
 
@@ -178,7 +205,7 @@ public class PostService {
 
         AllPostsDTO allPosts = new AllPostsDTO();
         allPosts.setCount(posts.size());
-        allPosts.setPost(posts);
+        allPosts.setPosts(posts);
         return allPosts;
     }
 
@@ -190,5 +217,133 @@ public class PostService {
             Post post = postRepository.findDetailPost(postDTO.getId());
             post.setViewCount(post.getViewCount() + 1);
         }
+    }
+
+
+    public boolean castVote(User user, Integer postId, Short value) {
+
+        PostVote userPostVote = postVoteRepository.findUserPostVote(postId, user.getId());
+        if (userPostVote == null) {
+
+            postVoteRepository.savePostVote(user.getId(), postId, formatter.format(new Date()), value);
+
+            return  true;
+        }
+
+        if (!userPostVote.getValue().equals(value)) {
+
+            userPostVote.setValue(value);
+            userPostVote.setTime(new Date());
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    public PostResponseErrors publishPost(User user, PostPublishDTO data) {
+        PostResponseErrors response = checkPostValidity(data);
+
+        if (response != null && !response.getResult()) {
+            return response;
+        }
+
+        if (data.getTimestamp() <= System.currentTimeMillis()) {
+            postRepository.savePost(data.getActive(), data.getText(), formatter.format(new Date()),
+                                    data.getTitle(), user.getId());
+
+        }
+
+        else {
+            Date date = new Date(data.getTimestamp() * 1000);
+            postRepository.savePost(data.getActive(), data.getText(), formatter.format(date),
+                                    data.getTitle(), user.getId());
+        }
+
+        tagCheckAndSave(data.getTags(), postRepository.findNewPostId(data.getText(), data.getTitle(), user.getId()));
+        response.setResult(true);
+        return response;
+
+    }
+
+
+    public PostResponseErrors editPost(User user, PostPublishDTO data, Integer postId) {
+
+        PostResponseErrors response = checkPostValidity(data);
+
+        if (response != null && !response.getResult()) {
+            return response;
+        }
+
+        Post post = postRepository.findDetailPost(postId);
+
+        if (user.getId() == post.getUser().getId()) {
+
+            post.setModerationStatus("NEW");
+            post.setTitle(data.getTitle());
+            post.setText(data.getText());
+
+            if (data.getTimestamp() <= System.currentTimeMillis()) {
+                post.setTime(new Date());
+            }
+            else {
+                post.setTime(new Date(data.getTimestamp()));
+            }
+
+            tagCheckAndSave(data.getTags(), postId);
+
+            }
+        else if (user.getIsModerator() == 1) {
+
+            post.setTitle(data.getTitle());
+            post.setText(data.getText());
+
+            if (data.getTimestamp() <= System.currentTimeMillis()) {
+                post.setTime(new Date());
+            }
+            else {
+                post.setTime(new Date(data.getTimestamp()));
+            }
+        }
+
+        response.setResult(true);
+        return response;
+    }
+
+    public void tagCheckAndSave(List<String> tags, Integer postId) {
+        for (String tag : tags) {
+            if (tagRepository.findTagIdFromName(tag) != null) {
+                tagToPostRepository.saveTagToPost(postId, tagRepository.findTagIdFromName(tag));
+            }
+            else {
+                tagRepository.saveTag(tag);
+                tagToPostRepository.saveTagToPost(postId, tagRepository.findTagIdFromName(tag));
+            }
+        }
+    }
+
+
+    public PostResponseErrors sendComment(User user, PostSendCommentDTO comment) {
+
+        return null;
+    }
+
+    public PostResponseErrors checkPostValidity(PostPublishDTO data) {
+        Map<String, String> error = new HashMap<>();
+        PostResponseErrors response = new PostResponseErrors();
+
+        if (data.getTitle().length() < 3) {
+            response.setResult(false);
+            response.setErrors(error.put("title", "Заголовок не установлен"));
+        }
+
+        else if (data.getText().length() < 50) {
+            response.setResult(false);
+            response.setErrors(error.put("text", "Текст публикации слишком короткий"));
+        }
+
+        return response;
+
     }
 }

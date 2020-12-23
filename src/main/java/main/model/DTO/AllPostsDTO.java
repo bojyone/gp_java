@@ -14,11 +14,11 @@ public class AllPostsDTO {
         this.count = count;
     }
 
-    public List<PostDTO> getPost() {
+    public List<PostDTO> getPosts() {
         return posts;
     }
 
-    public void setPost(List<PostDTO> posts) {
+    public void setPosts(List<PostDTO> posts) {
         this.posts = posts;
     }
 }

@@ -1,10 +1,17 @@
 package main.model.DTO;
 
-public class NewUserDTO {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class UserRegisterDTO {
     private String name;
+
+    @JsonProperty("e_mail")
     private String email;
+
     private String password;
     private String captcha;
+
+    @JsonProperty("captcha_secret")
     private String captchaSecret;
 
     public String getName() {

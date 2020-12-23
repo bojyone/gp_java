@@ -3,10 +3,10 @@ package main.controller;
 import main.model.DTO.*;
 import main.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
 
 
 @RestController
@@ -28,49 +28,44 @@ public class ApiAuthController {
 
 
     @PostMapping("/api/auth/register")
-    public ResponseEntity registration(@RequestBody NewUserDTO userData)
+    public ResponseEntity registration(@RequestBody UserRegisterDTO userData)
     {
-        PostResponseErrors rr = authService.newUserRegistration(userData);
+        PostResponseErrors registrationResponse = authService.newUserRegistration(userData);
 
-        if (rr.getResult()) {
-            return new ResponseEntity(rr, HttpStatus.CREATED);
+        if (registrationResponse.getResult()) {
+            return new ResponseEntity(new SimpleResponse(true), HttpStatus.CREATED);
         }
 
-        else {
-            return new ResponseEntity(rr, HttpStatus.BAD_REQUEST);
-        }
+        return new ResponseEntity(registrationResponse, HttpStatus.BAD_REQUEST);
     }
 
+
     @PostMapping("/api/auth/login")
-    public ResponseEntity authorization(@RequestParam(name = "e_mail") String email,
-                                        @RequestParam String password) {
+    public ResponseEntity authorization(@RequestBody UserAuthDTO data) {
 
-        PostResponseUser authResponse = authService.userAuthorization(email, password);
+        PostResponseUser authResponse = authService.userAuthorization(data.getEmail(), data.getPassword());
 
-        HttpHeaders headers = new HttpHeaders();
-        String token = authService.getGeneratedToken(24);
-        headers.add("token", token);
-
-        authService.saveToken(token, authResponse.getUser().getId());
+        authService.saveSession(RequestContextHolder.currentRequestAttributes().getSessionId(), authResponse.getUser().getId());
 
         if (authResponse.isResult()) {
-            return new ResponseEntity(authResponse, headers, HttpStatus.OK);
+            return new ResponseEntity(authResponse, HttpStatus.OK);
         }
         return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
     }
 
-    @GetMapping("/api/auth/logout")
-    public ResponseEntity logout(@RequestHeader("token") String token) {
 
-        authService.removeToken(token);
-        return  new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+    @GetMapping("/api/auth/logout")
+    public ResponseEntity logout() {
+
+        authService.removeSession(RequestContextHolder.currentRequestAttributes().getSessionId());
+        return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
     }
 
 
     @GetMapping("/api/auth/check")
-    public ResponseEntity authorizationCheck(@RequestParam String token) {
+    public ResponseEntity authorizationCheck() {
         
-        PostResponseUser response = authService.userAuthorizationCheck(token);
+        PostResponseUser response = authService.userAuthorizationCheck(RequestContextHolder.currentRequestAttributes().getSessionId());
         if (response.isResult()) {
             return new ResponseEntity(response, HttpStatus.OK);
         }

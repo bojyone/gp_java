@@ -1,31 +1,39 @@
 package main.model.DTO;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class SettingDTO {
-    private boolean MULTIUSER_MODE;
-    private boolean POST_PREMODERATION;
-    private boolean STATISTICS_IS_PUBLIC;
+    @JsonProperty("MULTIUSER_MODE")
+    private boolean multiUserMode;
 
-    public boolean getMultiuserMode() {
-        return MULTIUSER_MODE;
+    @JsonProperty("POST_PREMODERATION")
+    private boolean postPremoderation;
+
+    @JsonProperty("STATISTICS_IS_PUBLIC")
+    private boolean statisticsIsPublic;
+
+
+    public boolean isMultiUserMode() {
+        return multiUserMode;
     }
 
-    public void setMultiuserMode(boolean MULTIUSER_MODE) {
-        this.MULTIUSER_MODE = MULTIUSER_MODE;
+    public void setMultiUserMode(boolean multyUserMode) {
+        this.multiUserMode = multyUserMode;
     }
 
-    public boolean getPostPremoderation() {
-        return POST_PREMODERATION;
+    public boolean isPostPremoderation() {
+        return postPremoderation;
     }
 
-    public void setPostPremoderation(boolean POST_PREMODERATION) {
-        this.POST_PREMODERATION = POST_PREMODERATION;
+    public void setPostPremoderation(boolean postPremoderation) {
+        this.postPremoderation = postPremoderation;
     }
 
-    public boolean getStatisticsIsPublic() {
-        return STATISTICS_IS_PUBLIC;
+    public boolean isStatisticsIsPublic() {
+        return statisticsIsPublic;
     }
 
-    public void setStatisticsIsPublic(boolean STATISTICS_IS_PUBLIC) {
-        this.STATISTICS_IS_PUBLIC = STATISTICS_IS_PUBLIC;
+    public void setStatisticsIsPublic(boolean statisticsIsPublic) {
+        this.statisticsIsPublic = statisticsIsPublic;
     }
 }

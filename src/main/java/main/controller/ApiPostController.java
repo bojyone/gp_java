@@ -1,8 +1,7 @@
 package main.controller;
 
-import main.model.DTO.AllPostsDTO;
-import main.model.DTO.PostDetailDTO;
-import main.model.DTO.PostResponseUser;
+import main.model.DTO.*;
+import main.model.entities.PostVote;
 import main.model.entities.User;
 import main.services.AuthService;
 import main.services.PostService;
@@ -10,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -28,7 +29,7 @@ public class ApiPostController {
     }
 
 
-    @GetMapping("/api/post/")
+    @GetMapping("/api/post")
     public ResponseEntity postList(@RequestParam(defaultValue = "0") Integer offset,
                                    @RequestParam(defaultValue = "10") Integer limit,
                                    @RequestParam(required = false, defaultValue = "recent") String mode)
@@ -38,12 +39,22 @@ public class ApiPostController {
         return new ResponseEntity(posts, HttpStatus.OK);
     }
 
+
+    @GetMapping("/api/post/moderation")
+    public ResponseEntity moderation(@RequestParam(defaultValue = "0") Integer offset,
+                                     @RequestParam(defaultValue = "10") Integer limit) {
+
+        User moderator = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
+        AllPostsDTO posts = postService.getModeratorAllPosts(moderator, limit, offset);
+        return new ResponseEntity(HttpStatus.OK);
+    }
+
+
     @GetMapping("/api/post/{id}")
-    public ResponseEntity postDetail(@RequestHeader("token") String token,
-                                     @PathVariable int id)
+    public ResponseEntity postDetail(@PathVariable int id)
     {
         PostDetailDTO post = postService.getPostDetail(id);
-        User user = authService.getUserFromToken(token);
+        User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
         if(post == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -56,7 +67,7 @@ public class ApiPostController {
     }
 
 
-    @GetMapping("/api/post/search/")
+    @GetMapping("/api/post/search")
     public ResponseEntity postSearch(@RequestParam(defaultValue = "0") Integer offset,
                                      @RequestParam(defaultValue = "10") Integer limit,
                                      @RequestParam(name = "query", required = false) String query)
@@ -90,16 +101,73 @@ public class ApiPostController {
 
 
     @GetMapping("/api/post/my")
-    public ResponseEntity myPosts(@RequestHeader("token") String token,
-                                  @RequestParam(defaultValue = "0") Integer offset,
+    public ResponseEntity myPosts(@RequestParam(defaultValue = "0") Integer offset,
                                   @RequestParam(defaultValue = "10") Integer limit,
                                   @RequestParam(defaultValue = "published") String status) {
 
-        if (authService.tokenCheck(token)) {
-            AllPostsDTO userPosts = postService.getUserAllPosts(status, limit, offset, authService.userAuthorizationCheck(token).getUser().getId());
+        if (authService.sessionCheck(RequestContextHolder.currentRequestAttributes().getSessionId())) {
+            AllPostsDTO userPosts = postService.getUserAllPosts(status, limit, offset, authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId()).getId());
             return new ResponseEntity(userPosts, HttpStatus.OK);
         }
         return new ResponseEntity(HttpStatus.UNAUTHORIZED);
 
     }
+
+
+    @PostMapping("/api/post/like")
+    public ResponseEntity like(@RequestBody PostIdDTO data) {
+
+        User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
+        if (postService.castVote(user, data.getPostId(), (short) 1)) {
+            return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+        }
+        return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+    }
+
+
+    @PostMapping("/api/post/dislike")
+    public ResponseEntity dislike(@RequestBody PostIdDTO data) {
+
+        User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
+        if (postService.castVote(user, data.getPostId(), (short) 0)) {
+            return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+        }
+        return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+    }
+
+
+    @PostMapping("/api/post")
+    public ResponseEntity publication(@RequestBody PostPublishDTO data) {
+
+        User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
+        PostResponseErrors response = postService.publishPost(user, data);
+
+        if (response.getResult()) {
+            return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+        }
+
+        return new ResponseEntity(response, HttpStatus.OK);
+
+    }
+
+
+    @PutMapping("/api/post/{ID}")
+    public ResponseEntity postDetail(@PathVariable int id, PostPublishDTO data) {
+
+        User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
+        PostDetailDTO post = postService.getPostDetail(id);
+
+        if(post == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        PostResponseErrors response = postService.editPost(user, data, id);
+
+        if (response.getResult()) {
+            return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+        }
+
+        return new ResponseEntity(response, HttpStatus.OK);
+    }
+
 }

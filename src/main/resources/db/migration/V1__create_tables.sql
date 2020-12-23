@@ -16,15 +16,15 @@ CREATE TABLE `posts` (
         `text` text NOT NULL,
         `time` datetime NOT NULL,
         `title` varchar(255) NOT NULL,
-        `view_count` int(11) NOT NULL,
-        `moderator_id` int(11) NOT NULL,
+        `view_count` int(11) NOT NULL DEFAULT 0,
+        `moderator_id` int(11) DEFAULT NULL,
         `user_id` int(11) NOT NULL,
         PRIMARY KEY (`id`),
         FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
                      );
 CREATE TABLE `captcha_codes` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
-		`code` tinytext NOT NULL,
+		`code` text NOT NULL,
         `secret_code` tinytext NOT NULL,
         `time` datetime NOT NULL,
         PRIMARY KEY (`id`)

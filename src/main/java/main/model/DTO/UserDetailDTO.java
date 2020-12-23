@@ -4,6 +4,8 @@ public class UserDetailDTO {
     private Integer id;
     private String name;
     private String photo;
+
+
     private String email;
     private boolean moderation;
     private int moderationCount;
