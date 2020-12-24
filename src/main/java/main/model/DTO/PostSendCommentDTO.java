@@ -5,18 +5,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class PostSendCommentDTO {
 
     @JsonProperty("parent_id")
-    private String parentId;
+    private Integer parentId;
 
     @JsonProperty("post_id")
     private Integer postId;
 
     private String text;
 
-    public String getParentId() {
+    public Integer getParentId() {
         return parentId;
     }
 
-    public void setParentId(String parentId) {
+    public void setParentId(Integer parentId) {
         this.parentId = parentId;
     }
 

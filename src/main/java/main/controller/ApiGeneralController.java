@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 public class ApiGeneralController {
@@ -100,9 +102,28 @@ public class ApiGeneralController {
     public ResponseEntity comment(@RequestBody PostSendCommentDTO comment) {
 
         User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
+
+        if (postService.getParentCommentId(comment) != null &&
+            postService.getCommentFromID(postService.getParentCommentId(comment)) == null ||
+            postService.getPostDetail(comment.getPostId()) == null) {
+
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
+
         PostResponseErrors response = postService.sendComment(user, comment);
-        return null;
+
+        if (!response.getResult()) {
+
+            return new ResponseEntity(response, HttpStatus.OK);
+        }
+
+        Integer newCommentId = postService.getParentCommentId(comment);
+        Map<String, Integer> successResponse = new HashMap<>();
+        successResponse.put("id", newCommentId);
+
+        return new ResponseEntity(successResponse, HttpStatus.OK);
     }
+
 
     @PostMapping("/api/profile/my")
     public ResponseEntity profile(@RequestBody EditProfileDTO data) {

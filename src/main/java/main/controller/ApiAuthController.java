@@ -74,9 +74,9 @@ public class ApiAuthController {
 
 
     @PostMapping("/api/auth/restore")
-    public ResponseEntity passwordRestore(String email) {
+    public ResponseEntity passwordRestore(@RequestBody UserEmailDTO data) {
 
-        return new ResponseEntity(authService.userPasswordRestore(email), HttpStatus.OK);
+        return new ResponseEntity(authService.userPasswordRestore(data.getEmail()), HttpStatus.OK);
     }
 
 

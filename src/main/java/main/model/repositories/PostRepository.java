@@ -167,4 +167,33 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
                           @Param("title") String title,
                           @Param("user_id") Integer userID);
 
+
+    @Modifying
+    @Query(value = "UPDATE posts SET view_count = :view_count WHERE id = :id",
+            nativeQuery = true)
+    @Transactional
+    void updatePostViewCount(@Param("view_count") Integer count,
+                             @Param("id") Integer id);
+
+
+    @Modifying
+    @Query(value = "UPDATE posts SET moderation_status = 'NEW', title = :title, text = :text, " +
+           "time = :time WHERE id = :id",
+           nativeQuery = true)
+    @Transactional
+    void updatePostByUser(@Param("title") String title,
+                          @Param("text") String text,
+                          @Param("time") String time,
+                          @Param("id") Integer id);
+
+
+    @Modifying
+    @Query(value = "UPDATE posts SET title = :title, text = :text, time = :time WHERE id = :id",
+           nativeQuery = true)
+    @Transactional
+    void updatePostByModerator(@Param("title") String title,
+                               @Param("text") String text,
+                               @Param("time") String time,
+                               @Param("id") Integer id);
+
 }

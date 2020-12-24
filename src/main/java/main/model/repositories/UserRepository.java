@@ -19,9 +19,11 @@ public interface UserRepository extends CrudRepository<User, Integer> {
            nativeQuery = true)
     User findUserFromEmail(@Param("email") String email);
 
+
     @Query(value = "SELECT u.* FROM users u WHERE u.id = :id",
            nativeQuery = true)
     User findUserFromId(@Param("id") Integer id);
+
 
     @Query(value = "SELECT u.* FROM users u WHERE u.code = :code",
            nativeQuery = true)
@@ -40,4 +42,10 @@ public interface UserRepository extends CrudRepository<User, Integer> {
                   @Param("reg_time") String regTime);
 
 
+    @Modifying
+    @Query(value = "UPDATE users SET code = :code WHERE id = :id",
+           nativeQuery = true)
+    @Transactional
+    void updateUserCode(@Param("code") String code,
+                        @Param("id") Integer id);
 }

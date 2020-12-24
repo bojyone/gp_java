@@ -9,6 +9,8 @@ import main.model.repositories.CaptchaCodeRepository;
 import main.model.repositories.PostRepository;
 import main.model.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +26,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final CaptchaCodeRepository ccRepository;
     private final PostRepository postRepository;
+    private final JavaMailSender emailSender;
 
-//    private final String passwordError = "\"password\": \"Пароль короче 6-ти символов\"";
-//    private final String captchaError = "\"captcha\": \"Код с картинки введён неверно\"";
-//    private final String nameError = "\"name\": \"Имя указано неверно\"";
-//    private final String codeError = "\"code\": \"Ссылка для восстановления пароля устарела." +
-//                                     "<a href=\"/auth/restore\">Запросить ссылку снова</a>\"";
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -40,11 +38,12 @@ public class AuthService {
 
     @Autowired
     public AuthService(UserRepository userRepository, CaptchaCodeRepository ccRepository,
-                       PostRepository postRepository) {
+                       PostRepository postRepository, JavaMailSender emailSender) {
 
         this.userRepository = userRepository;
         this.ccRepository = ccRepository;
         this.postRepository = postRepository;
+        this.emailSender = emailSender;
     }
 
 
@@ -220,9 +219,20 @@ public class AuthService {
     public SimpleResponse userPasswordRestore(String email) {
 
         User user = userRepository.findUserFromEmail(email);
+
         if (user != null) {
 
-            user.setCode(getGeneratedToken(45));
+            String code = getGeneratedToken(45);
+            userRepository.updateUserCode(code, user.getId());
+
+            SimpleMailMessage message = new SimpleMailMessage();
+
+            message.setTo(email);
+            message.setSubject("Восстановление пароля");
+            message.setText("Для восстановления пароля пройдите по данной ссылке: " +
+                            "http://127.0.0.1:8080/login/change-password/" + code);
+            emailSender.send(message);
+
             return new SimpleResponse(true);
         }
         return new SimpleResponse(false);

@@ -2,10 +2,7 @@ package main.services;
 
 import main.model.DTO.*;
 import main.model.entities.*;
-import main.model.repositories.PostRepository;
-import main.model.repositories.PostVoteRepository;
-import main.model.repositories.Tag2PostRepository;
-import main.model.repositories.TagRepository;
+import main.model.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +18,7 @@ import java.util.stream.Collectors;
 @Service
 public class PostService {
     private final PostRepository postRepository;
+    private final PostCommentRepository postCommentRepository;
     private final TagRepository tagRepository;
     private final Tag2PostRepository tagToPostRepository;
     private final PostVoteRepository postVoteRepository;
@@ -31,13 +29,14 @@ public class PostService {
     @Autowired
     public PostService(PostRepository postRepository, PostVoteRepository postVoteRepository,
                        ModelMapper modelMapper, TagRepository tagRepository,
-                       Tag2PostRepository tagToPostRepository) {
+                       Tag2PostRepository tagToPostRepository, PostCommentRepository postCommentRepository) {
 
         this.postRepository = postRepository;
         this.tagRepository = tagRepository;
         this.tagToPostRepository = tagToPostRepository;
         this.postVoteRepository = postVoteRepository;
         this.modelMapper = modelMapper;
+        this.postCommentRepository = postCommentRepository;
 
     }
 
@@ -167,9 +166,11 @@ public class PostService {
         return postDetailDTO;
     }
 
+
     public AllPostsDTO getSearchResult(Integer offset, Integer limit, String query) {
 
         Pageable paging = PageRequest.of(offset / limit, limit);
+
         List<PostDTO> posts = ((List<Post>) postRepository
                               .findSearchResult(paging, query))
                               .stream()
@@ -180,6 +181,7 @@ public class PostService {
         allPosts.setPosts(posts);
         return allPosts;
     }
+
 
     public AllPostsDTO getSearchResultByDate(Integer offset, Integer limit, String date) {
 
@@ -194,6 +196,7 @@ public class PostService {
         allPosts.setPosts(posts);
         return allPosts;
     }
+
 
     public AllPostsDTO getSearchResultByTag(Integer offset, Integer limit, String tag) {
 
@@ -212,10 +215,11 @@ public class PostService {
 
     public void postViewCountIncrement(User user, PostDetailDTO postDTO) {
 
-        if (user == null || user.getId() != postDTO.getUser().getId() || user.getIsModerator() == 0) {
+        if (user == null || user.getId() != postDTO.getUser().getId() && user.getIsModerator() == 0) {
 
             Post post = postRepository.findDetailPost(postDTO.getId());
-            post.setViewCount(post.getViewCount() + 1);
+            postRepository.updatePostViewCount(post.getViewCount() + 1, post.getId());
+
         }
     }
 
@@ -278,38 +282,31 @@ public class PostService {
 
         Post post = postRepository.findDetailPost(postId);
 
+        Date date;
+
+        if (data.getTimestamp() <= System.currentTimeMillis()) {
+            date = new Date();
+        }
+        else {
+            date = new Date(data.getTimestamp());
+        }
+
         if (user.getId() == post.getUser().getId()) {
 
-            post.setModerationStatus("NEW");
-            post.setTitle(data.getTitle());
-            post.setText(data.getText());
-
-            if (data.getTimestamp() <= System.currentTimeMillis()) {
-                post.setTime(new Date());
-            }
-            else {
-                post.setTime(new Date(data.getTimestamp()));
-            }
-
+            postRepository.updatePostByUser(data.getTitle(), data.getText(), formatter.format(date), postId);
             tagCheckAndSave(data.getTags(), postId);
 
             }
         else if (user.getIsModerator() == 1) {
 
-            post.setTitle(data.getTitle());
-            post.setText(data.getText());
+            postRepository.updatePostByModerator(data.getTitle(), data.getText(), formatter.format(date), postId);
 
-            if (data.getTimestamp() <= System.currentTimeMillis()) {
-                post.setTime(new Date());
-            }
-            else {
-                post.setTime(new Date(data.getTimestamp()));
-            }
         }
 
         response.setResult(true);
         return response;
     }
+
 
     public void tagCheckAndSave(List<String> tags, Integer postId) {
         for (String tag : tags) {
@@ -325,9 +322,42 @@ public class PostService {
 
 
     public PostResponseErrors sendComment(User user, PostSendCommentDTO comment) {
+        Map<String, String> error = new HashMap<>();
+        PostResponseErrors response = new PostResponseErrors();
 
-        return null;
+        if (comment.getText().length() <= 1) {
+            response.setResult(false);
+            response.setErrors(error.put("text", "Текст комментария не задан или слишком короткий"));
+            return response;
+        }
+
+        response.setResult(true);
+
+        postCommentRepository.saveComment(comment.getText(), formatter.format(new Date()),
+                                          comment.getPostId(), user.getId(), getParentCommentId(comment));
+        return response;
     }
+
+
+    public Integer getParentCommentId(PostSendCommentDTO comment) {
+        Integer parentId;
+
+        try {
+            parentId = comment.getParentId();
+        }
+        catch (Exception ex) {
+            parentId = null;
+        }
+
+        return parentId;
+    }
+
+
+    public PostComment getCommentFromID(Integer id) {
+
+        return postCommentRepository.findCommentFromId(id);
+    }
+
 
     public PostResponseErrors checkPostValidity(PostPublishDTO data) {
         Map<String, String> error = new HashMap<>();
