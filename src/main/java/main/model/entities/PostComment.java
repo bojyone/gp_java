@@ -11,7 +11,7 @@ public class PostComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name="parent_id", nullable = true)
+    @Column(name="parent_id")
     private Integer parentId;
 
     @OneToMany(cascade=CascadeType.PERSIST)

@@ -84,12 +84,6 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
                                      @Param("tag") String tag);
 
 
-//    @Query(value = "SELECT DISTINCT x.p_date FROM (SELECT DATE(p.time) AS p_date " +
-//           "FROM posts AS p WHERE YEAR(p.time) = :year) AS x",
-//           nativeQuery = true)
-//    List<String> findDatePostOfYear(@Param("year") Integer year);
-
-
     @Query(value = "SELECT x.p_date as date, COUNT(x.p_id) as count FROM (SELECT DATE(p.time) AS p_date, " +
            "p.id AS p_id FROM posts AS p WHERE YEAR(p.time) = :year) AS x GROUP BY x.p_date",
            nativeQuery = true)

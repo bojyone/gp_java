@@ -19,7 +19,7 @@ public class Post {
     private String moderationStatus;
 
     //@ManyToOne(cascade = CascadeType.ALL, optional=false)
-    @Column(name = "moderator_id", nullable = true)
+    @Column(name = "moderator_id")
     private Integer moderatorId;
 
     @ManyToOne(cascade = CascadeType.ALL, optional=false)

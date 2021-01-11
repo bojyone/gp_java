@@ -8,8 +8,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Repository
 public interface PostVoteRepository extends CrudRepository<PostVote, Integer> {
 
@@ -17,6 +15,16 @@ public interface PostVoteRepository extends CrudRepository<PostVote, Integer> {
            nativeQuery = true)
     PostVote findUserPostVote(@Param("post_id") Integer postId,
                               @Param("user_id") Integer userId);
+
+
+    @Query(value = "SELECT COUNT(*) cnt FROM post_votes pv WHERE post_id = :post_id AND value = 1",
+            nativeQuery = true)
+    Integer findLikeCount(@Param("post_id") Integer postId);
+
+
+    @Query(value = "SELECT COUNT(*) cnt FROM post_votes pv WHERE post_id = :post_id AND value = 0",
+            nativeQuery = true)
+    Integer findDislikeCount(@Param("post_id") Integer postId);
 
 
     @Modifying

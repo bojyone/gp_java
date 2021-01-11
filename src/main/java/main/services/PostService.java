@@ -8,7 +8,6 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -22,20 +21,21 @@ public class PostService {
     private final TagRepository tagRepository;
     private final Tag2PostRepository tagToPostRepository;
     private final PostVoteRepository postVoteRepository;
-    private final ModelMapper modelMapper;
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final ModelMapper modelMapper = new ModelMapper();
+    private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
     @Autowired
-    public PostService(PostRepository postRepository, PostVoteRepository postVoteRepository,
-                       ModelMapper modelMapper, TagRepository tagRepository,
-                       Tag2PostRepository tagToPostRepository, PostCommentRepository postCommentRepository) {
+    public PostService(PostRepository postRepository,
+                       PostVoteRepository postVoteRepository,
+                       TagRepository tagRepository,
+                       Tag2PostRepository tagToPostRepository,
+                       PostCommentRepository postCommentRepository) {
 
         this.postRepository = postRepository;
         this.tagRepository = tagRepository;
         this.tagToPostRepository = tagToPostRepository;
         this.postVoteRepository = postVoteRepository;
-        this.modelMapper = modelMapper;
         this.postCommentRepository = postCommentRepository;
 
     }
@@ -96,15 +96,6 @@ public class PostService {
     private PostDTO convertToPostDTO(Post post) {
         PostDTO postDTO = new PostDTO();
         List<PostComment> comments = post.getPostComments();
-        List<PostVote> votes = post.getPostVotes();
-        int likeCount = 0;
-        int dislikeCount = 0;
-
-        for (PostVote vote : votes)
-            if (vote.getValue() == 1)
-                likeCount += 1;
-            else
-                dislikeCount += 1;
 
         modelMapper.getConfiguration()
                 .setMatchingStrategy(MatchingStrategies.LOOSE);
@@ -115,8 +106,8 @@ public class PostService {
         postDTO.setUser(postAuthor);
         postDTO.setTitle(post.getTitle());
         postDTO.setCommentCount(comments.size());
-        postDTO.setLikeCount(likeCount);
-        postDTO.setDislikeCount(dislikeCount);
+        postDTO.setLikeCount(postVoteRepository.findLikeCount(post.getId()));
+        postDTO.setDislikeCount(postVoteRepository.findDislikeCount(post.getId()));
         postDTO.setViewCount(post.getViewCount());
 
         return postDTO;
@@ -132,14 +123,7 @@ public class PostService {
         List<PostCommentDTO> list = new ArrayList<>();
         List<PostComment> comments = post.getPostComments();
         List<PostVote> votes = post.getPostVotes();
-        int likeCount = 0;
-        int dislikeCount = 0;
 
-        for (PostVote vote : votes)
-            if (vote.getValue() == 1)
-                likeCount += 1;
-            else
-                dislikeCount += 1;
 
         modelMapper.getConfiguration()
                    .setMatchingStrategy(MatchingStrategies.LOOSE);
@@ -160,8 +144,8 @@ public class PostService {
         postDetailDTO.setTitle(post.getTitle());
         postDetailDTO.setText(post.getText());
         postDetailDTO.setComments(list);
-        postDetailDTO.setLikeCount(likeCount);
-        postDetailDTO.setDislikeCount(dislikeCount);
+        postDetailDTO.setLikeCount(postVoteRepository.findLikeCount(post.getId()));
+        postDetailDTO.setDislikeCount(postVoteRepository.findDislikeCount(post.getId()));
         postDetailDTO.setViewCount(post.getViewCount());
         return postDetailDTO;
     }
@@ -271,6 +255,11 @@ public class PostService {
 
     }
 
+    public Integer getParentCommentId(PostSendCommentDTO comment) {
+
+        return comment.getParentId();
+    }
+
 
     public PostResponseErrors editPost(User user, PostPublishDTO data, Integer postId) {
 
@@ -325,31 +314,35 @@ public class PostService {
         Map<String, String> error = new HashMap<>();
         PostResponseErrors response = new PostResponseErrors();
 
-        if (comment.getText().length() <= 1) {
+        int MIN_COMMENT_SIZE = 3;
+        if (comment.getText().length() <= MIN_COMMENT_SIZE) {
             response.setResult(false);
-            response.setErrors(error.put("text", "Текст комментария не задан или слишком короткий"));
+            error.put("text", "Текст комментария не задан или слишком короткий");
+            response.setErrors(error);
             return response;
         }
 
         response.setResult(true);
 
-        postCommentRepository.saveComment(comment.getText(), formatter.format(new Date()),
-                                          comment.getPostId(), user.getId(), getParentCommentId(comment));
-        return response;
-    }
+//        postCommentRepository.saveComment(comment.getText(), formatter.format(new Date()),
+//                                          comment.getPostId(), user.getId(), comment.getParentId());
 
-
-    public Integer getParentCommentId(PostSendCommentDTO comment) {
-        Integer parentId;
+        PostComment pc = new PostComment();
 
         try {
-            parentId = comment.getParentId();
+            pc.setParentId(comment.getParentId());
         }
-        catch (Exception ex) {
-            parentId = null;
-        }
+        catch (Exception ignored)
+        {}
 
-        return parentId;
+
+        pc.setUser(user);
+        pc.setPost(postRepository.findDetailPost(comment.getPostId()));
+        pc.setText(comment.getText());
+        pc.setTime(new Date());
+
+        postCommentRepository.save(pc);
+        return response;
     }
 
 
@@ -362,15 +355,20 @@ public class PostService {
     public PostResponseErrors checkPostValidity(PostPublishDTO data) {
         Map<String, String> error = new HashMap<>();
         PostResponseErrors response = new PostResponseErrors();
+        response.setResult(true);
 
-        if (data.getTitle().length() < 3) {
+        int MIN_TEXT_SIZE = 50;
+        int MIN_TITLE_SIZE = 3;
+        if (data.getTitle().length() < MIN_TITLE_SIZE) {
             response.setResult(false);
-            response.setErrors(error.put("title", "Заголовок не установлен"));
+            error.put("title", "Заголовок не установлен");
+            response.setErrors(error);
         }
 
-        else if (data.getText().length() < 50) {
+        else if (data.getText().length() < MIN_TEXT_SIZE) {
             response.setResult(false);
-            response.setErrors(error.put("text", "Текст публикации слишком короткий"));
+            error.put("text", "Текст публикации слишком короткий");
+            response.setErrors(error);
         }
 
         return response;

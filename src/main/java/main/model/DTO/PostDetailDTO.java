@@ -1,19 +1,18 @@
 package main.model.DTO;
 
-import java.util.Date;
 import java.util.List;
 
 public class PostDetailDTO {
     private Integer id;
-    private Boolean active;
     private Long timestamp;
     private UserDTO user;
     private String title;
-    private String text;
     private List<PostCommentDTO> comments;
     private Integer likeCount;
     private Integer dislikeCount;
     private Integer viewCount;
+    private Boolean active;
+    private String text;
 
     public Integer getId() {
         return id;
@@ -28,10 +27,7 @@ public class PostDetailDTO {
     }
 
     public void setActive(Short active) {
-        if (active > 0)
-            this.active = true;
-        else
-            this.active = false;
+        this.active = active > 0;
     }
 
     public Long getTimestamp() {

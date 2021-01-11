@@ -23,7 +23,7 @@ public class ApiAuthController {
     @GetMapping("/api/auth/captcha")
     public ResponseEntity captcha() {
 
-        return new ResponseEntity(authService.captchaGenerate(), HttpStatus.OK);
+        return new ResponseEntity<>(authService.captchaGenerate(), HttpStatus.OK);
     }
 
 
@@ -33,10 +33,10 @@ public class ApiAuthController {
         PostResponseErrors registrationResponse = authService.newUserRegistration(userData);
 
         if (registrationResponse.getResult()) {
-            return new ResponseEntity(new SimpleResponse(true), HttpStatus.CREATED);
+            return new ResponseEntity<>(new SimpleResponse(true), HttpStatus.CREATED);
         }
 
-        return new ResponseEntity(registrationResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(registrationResponse, HttpStatus.BAD_REQUEST);
     }
 
 
@@ -48,9 +48,9 @@ public class ApiAuthController {
         authService.saveSession(RequestContextHolder.currentRequestAttributes().getSessionId(), authResponse.getUser().getId());
 
         if (authResponse.isResult()) {
-            return new ResponseEntity(authResponse, HttpStatus.OK);
+            return new ResponseEntity<>(authResponse, HttpStatus.OK);
         }
-        return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+        return new ResponseEntity<>(new SimpleResponse(false), HttpStatus.OK);
     }
 
 
@@ -58,7 +58,7 @@ public class ApiAuthController {
     public ResponseEntity logout() {
 
         authService.removeSession(RequestContextHolder.currentRequestAttributes().getSessionId());
-        return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+        return new ResponseEntity<>(new SimpleResponse(true), HttpStatus.OK);
     }
 
 
@@ -67,16 +67,16 @@ public class ApiAuthController {
         
         PostResponseUser response = authService.userAuthorizationCheck(RequestContextHolder.currentRequestAttributes().getSessionId());
         if (response.isResult()) {
-            return new ResponseEntity(response, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        return new ResponseEntity(new SimpleResponse(false), HttpStatus.OK);
+        return new ResponseEntity<>(new SimpleResponse(false), HttpStatus.OK);
     }
 
 
     @PostMapping("/api/auth/restore")
     public ResponseEntity passwordRestore(@RequestBody UserEmailDTO data) {
 
-        return new ResponseEntity(authService.userPasswordRestore(data.getEmail()), HttpStatus.OK);
+        return new ResponseEntity<>(authService.userPasswordRestore(data.getEmail()), HttpStatus.OK);
     }
 
 
@@ -85,9 +85,9 @@ public class ApiAuthController {
         PostResponseErrors response = authService.passwordCheckAndChange(data);
 
         if (response.getResult()) {
-            return new ResponseEntity(new SimpleResponse(true), HttpStatus.OK);
+            return new ResponseEntity<>(new SimpleResponse(true), HttpStatus.OK);
         }
 
-        return new ResponseEntity(response, HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

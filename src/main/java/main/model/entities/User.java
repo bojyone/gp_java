@@ -27,10 +27,10 @@ public class User
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = true)
+    @Column()
     private String code;
 
-    @Column(length = 1000, nullable = true)
+    @Column(length = 1000)
     private String photo;
 
     @OneToMany
@@ -122,14 +122,7 @@ public class User
     public void setUserPosts(List<Post> userPosts) {
         this.userPosts = userPosts;
     }
-//
-//    public List<Post> getModeratorPosts() {
-//        return moderatorPosts;
-//    }
-//
-//    public void setModeratorPosts(List<Post> moderatorPosts) {
-//        this.moderatorPosts = moderatorPosts;
-//    }
+
 
     public List<PostVote> getUserVotes() {
         return userVotes;

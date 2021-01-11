@@ -1,10 +1,7 @@
 package main.controller;
 
-import main.api.response.InitResponse;
 import main.model.DTO.*;
 import main.model.entities.User;
-import main.model.repositories.GlobalSettingRepository;
-import main.model.repositories.UserRepository;
 import main.services.AuthService;
 import main.services.GeneralService;
 import main.services.PostService;
@@ -13,23 +10,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 public class ApiGeneralController {
-    private final InitResponse initResponse;
+    private final InitDTO initResponse = new InitDTO();
     private final GeneralService generalService;
     private final AuthService authService;
     private final PostService postService;
 
 
     @Autowired
-    public ApiGeneralController(InitResponse initResponse, GeneralService generalService,
+    public ApiGeneralController(GeneralService generalService,
                                 AuthService authService, PostService postService) {
-        this.initResponse = initResponse;
         this.generalService = generalService;
         this.authService = authService;
         this.postService = postService;
@@ -37,8 +36,8 @@ public class ApiGeneralController {
 
 
     @GetMapping("/api/init")
-    private InitResponse init(@RequestBody InitResponse initResponse) {
-        return initResponse;
+    private ResponseEntity init() {
+        return new ResponseEntity<>(initResponse, HttpStatus.OK);
     }
 
 
@@ -49,19 +48,20 @@ public class ApiGeneralController {
         if (year == null)
             year = Calendar.getInstance().get(Calendar.YEAR);
 
-        return new ResponseEntity(generalService.getPostCalendar(year), HttpStatus.OK);
+        return new ResponseEntity<>(generalService.getPostCalendar(year), HttpStatus.OK);
     }
 
 
     @GetMapping("/api/tag")
     public ResponseEntity tag(@RequestParam(required = false) String query) {
-        return new ResponseEntity(generalService.getTagWeight(query), HttpStatus.OK);
+        return new ResponseEntity<>(generalService.getTagWeight(query), HttpStatus.OK);
     }
 
 
     @GetMapping("/api/settings")
     public ResponseEntity globalSettings() {
-        return new ResponseEntity(generalService.getSettings(), HttpStatus.OK);
+
+        return new ResponseEntity<>(generalService.getSettings(), HttpStatus.OK);
     }
 
 
@@ -84,7 +84,7 @@ public class ApiGeneralController {
         User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
         StatisticInterface statistics = generalService.getAllStatistics(user);
         if (statistics != null) {
-            return new ResponseEntity(statistics, HttpStatus.OK);
+            return new ResponseEntity<>(statistics, HttpStatus.OK);
         }
         return new ResponseEntity(HttpStatus.UNAUTHORIZED);
     }
@@ -94,7 +94,7 @@ public class ApiGeneralController {
     public ResponseEntity userStatistics() {
 
         User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
-        return new ResponseEntity(generalService.getUserStatistics(user), HttpStatus.OK);
+        return new ResponseEntity<>(generalService.getUserStatistics(user), HttpStatus.OK);
     }
 
 
@@ -114,14 +114,14 @@ public class ApiGeneralController {
 
         if (!response.getResult()) {
 
-            return new ResponseEntity(response, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
 
         Integer newCommentId = postService.getParentCommentId(comment);
         Map<String, Integer> successResponse = new HashMap<>();
         successResponse.put("id", newCommentId);
 
-        return new ResponseEntity(successResponse, HttpStatus.OK);
+        return new ResponseEntity<>(successResponse, HttpStatus.OK);
     }
 
 
@@ -136,9 +136,24 @@ public class ApiGeneralController {
     public ResponseEntity moderation(@RequestBody ModeratorAction action) {
 
         User user = authService.getUserFromSessionId(RequestContextHolder.currentRequestAttributes().getSessionId());
-        return new ResponseEntity(generalService.moderatorAct(action, user), HttpStatus.OK);
+        return new ResponseEntity<>(generalService.moderatorAct(action, user), HttpStatus.OK);
     }
 
+
+    @PostMapping("/api/image")
+    public ResponseEntity handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException {
+
+
+        if (!file.isEmpty()) {
+
+            String path = generalService.saveImage(file);
+            if (path == null) {
+                return null;
+            }
+            return new ResponseEntity<>(path, HttpStatus.OK);
+        }
+        return null;
+    }
 
 
 }

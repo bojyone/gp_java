@@ -4,9 +4,5 @@ spring.datasource.password: nolisu111
 spring.jpa.hibernate.ddl-auto: validate
 spring.jpa.show-sql: false
 
-blog.title: DevPub
-blog.subtitle: Рассказы разработчиков
-blog.phone: +7 903 666-44-55
-blog.email: mail@mail.ru
-blog.copyright: Дмитрий Сергеев
-blog.copyrightFrom: 2005
+blog.MY_EMAIL: myjavamail441@gmail.com
+blog.MY_PASSWORD: Admin111

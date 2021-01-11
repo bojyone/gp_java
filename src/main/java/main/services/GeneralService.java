@@ -9,10 +9,17 @@ import main.model.repositories.PostRepository;
 import main.model.repositories.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Service
 public class GeneralService {
@@ -142,5 +149,31 @@ public class GeneralService {
         post.setModerationStatus(action.getDecision().equals("accept") ? "ACCEPTED" : "DECLINED");
         post.setModerator(moderator.getId());
         return new SimpleResponse(true);
+    }
+
+
+    public String saveImage(MultipartFile file) throws IOException {
+
+        byte[] bytes = file.getBytes();
+
+        if (bytes.length > 1000000) {
+            return null;
+        }
+
+        StringBuilder uploadFolder = new StringBuilder();
+        uploadFolder.append("/upload/");
+
+        for (int i = 0; i < 3; i++) {
+            byte[] array = new byte[3];
+            new Random().nextBytes(array);
+            String generatedString = new String(array, StandardCharsets.UTF_8);
+            uploadFolder.append(generatedString);
+            uploadFolder.append("/");
+
+        }
+        Path path = Paths.get(uploadFolder + file.getOriginalFilename());
+        Files.write(path, bytes);
+
+        return uploadFolder.toString();
     }
 }

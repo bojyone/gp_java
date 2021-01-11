@@ -28,12 +28,14 @@ public class AuthService {
     private final PostRepository postRepository;
     private final JavaMailSender emailSender;
 
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
-    private Map<String, Integer> authUsers = new HashMap<>();
+    private final Map<String, Integer> authUsers = new HashMap<>();
+    private final Integer MIN_PASSWORD_SIZE = 6;
+
 
 
     @Autowired
@@ -90,28 +92,31 @@ public class AuthService {
 
         if (userRepository.findUserFromEmail(userData.getEmail()) != null) {
             registrationResponse.setResult(false);
-            registrationResponse.setErrors(error.put("email", "Этот e-mail уже зарегистрирован"));
+            error.put("email", "Этот e-mail уже зарегистрирован");
+            registrationResponse.setErrors(error);
             return registrationResponse;
         }
 
-        else if (userData.getPassword().length() < 6) {
+        else if (userData.getPassword().length() < MIN_PASSWORD_SIZE) {
             registrationResponse.setResult(false);
-            registrationResponse.setErrors(error.put("password", "Пароль короче 6-ти символов"));
+            error.put("password", "Пароль короче " + MIN_PASSWORD_SIZE + " символов");
+            registrationResponse.setErrors(error);
             return registrationResponse;
         }
 
         else if (!captchaCheck(requestCaptcha)) {
             registrationResponse.setResult(false);
-            registrationResponse.setErrors(error.put("captcha", "Код с картинки введён неверно"));
+            error.put("captcha", "Код с картинки введён неверно");
+            registrationResponse.setErrors(error);
             return registrationResponse;
         }
 
         else if (!userData.getName().matches("[a-zA-Zа-яА-Я ]*")) {
             registrationResponse.setResult(false);
-            registrationResponse.setErrors(error.put("name", "Имя указано неверно"));
+            error.put("name", "Имя указано неверно");
+            registrationResponse.setErrors(error);
             return registrationResponse;
         }
-        System.out.println();
 
         userRepository.saveUser(userData.getEmail(), (short) 0, userData.getName(), passwordEncoder.encode(userData.getPassword()), formatter.format(new Date()));
         registrationResponse.setResult(true);
@@ -173,9 +178,7 @@ public class AuthService {
         try {
             authUsers.remove(sessionId);
         }
-        catch (Exception ex) {
-            ;
-        }
+        catch (Exception ignored) { }
     }
 
 
@@ -248,18 +251,21 @@ public class AuthService {
 
         if (user == null) {
             response.setResult(false);
-            response.setErrors(error.put("code", "Ссылка для восстановления пароля устарела.<a href=\"/auth/restore\">" +
-                                         "Запросить ссылку снова</a>"));
+            error.put("code", "Ссылка для восстановления пароля устарела.<a href=\"/auth/restore\">" +
+                      "Запросить ссылку снова</a>");
+            response.setErrors(error);
             return response;
         }
-        else if (data.getPassword().length() < 6) {
+        else if (data.getPassword().length() < MIN_PASSWORD_SIZE) {
             response.setResult(false);
-            response.setErrors(error.put("password", "Пароль короче 6-ти символов"));
+            error.put("password", "Пароль короче " + MIN_PASSWORD_SIZE + " символов");
+            response.setErrors(error);
             return response;
         }
         else if (!captchaCheck(data.getCaptcha())) {
             response.setResult(false);
-            response.setErrors(error.put("captcha", "Код с картинки введён неверно"));
+            error.put("captcha", "Код с картинки введён неверно");
+            response.setErrors(error);
             return response;
         }
 

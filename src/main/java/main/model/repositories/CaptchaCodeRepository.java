@@ -19,8 +19,7 @@ public interface CaptchaCodeRepository extends CrudRepository<CaptchaCode, Integ
     void deleteOldCaptcha();
 
 
-    @Query(value = "SELECT c.* FROM captcha_codes c WHERE c.secret_code = :secret_code" +
-           "",
+    @Query(value = "SELECT c.* FROM captcha_codes c WHERE c.secret_code = :secret_code",
            nativeQuery = true)
     CaptchaCode findCaptchaCode(@Param("secret_code") String secret_code);
 

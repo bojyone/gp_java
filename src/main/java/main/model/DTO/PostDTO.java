@@ -1,7 +1,5 @@
 package main.model.DTO;
 
-import java.util.Date;
-
 public class PostDTO {
     private Integer id;
     private Long timestamp;

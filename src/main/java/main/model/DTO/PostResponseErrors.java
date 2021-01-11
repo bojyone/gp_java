@@ -1,9 +1,17 @@
 package main.model.DTO;
 
+import java.util.Map;
+
 public class PostResponseErrors {
     private Boolean result;
-    private String errors;
+    private Map<String, String> errors;
 
+    public PostResponseErrors() {}
+
+    public PostResponseErrors(Boolean result, Map<String, String> errors) {
+        this.result = result;
+        this.errors = errors;
+    }
     public Boolean getResult() {
         return result;
     }
@@ -12,11 +20,11 @@ public class PostResponseErrors {
         this.result = result;
     }
 
-    public String getErrors() {
+    public Map<String, String> getErrors() {
         return errors;
     }
 
-    public void setErrors(String errors) {
+    public void setErrors(Map<String, String> errors) {
         this.errors = errors;
     }
 }

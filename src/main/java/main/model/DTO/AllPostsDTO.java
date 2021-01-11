@@ -1,5 +1,6 @@
 package main.model.DTO;
 
+
 import java.util.List;
 
 public class AllPostsDTO {
